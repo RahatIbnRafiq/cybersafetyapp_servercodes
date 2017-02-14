@@ -36,5 +36,5 @@ module.exports.checkIfGuardianExists = (email, callback) => {
 // Guardian LogIn
 
 module.exports.loginGuardian = (email,password, callback) => {
-	Guardian.count({ email: email,password:password }).count(callback);
+	Guardian.count({ email: email,password:password}).count(callback);
 }

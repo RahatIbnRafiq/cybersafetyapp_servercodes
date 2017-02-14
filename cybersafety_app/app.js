@@ -19,14 +19,16 @@ Guardian =require('./models/guardian');
 //Register Guardian into CybersafetyApp
 
 app.post('/api/guardian/register', (req, res) => {
+	console.log(req.body);
 	var guardian = req.body;
 	var email = guardian.email;
+	console.log(guardian);
 
-
+	
 	Guardian.checkIfGuardianExists(email, (err, count) => {
 		if(err){
 			res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
-			//throw err;
+			throw err;
 		}
 		if(count>0)
 		{
@@ -50,8 +52,9 @@ app.post('/api/guardian/register', (req, res) => {
 
 // Guardian Log in
 
-app.post('/api/guardian/login', (req, res) => {
-	var login = req.body;
+app.get('/api/guardian/login', (req, res) => {
+	var login = req.query;
+	console.log(login);
 	var email = login.email;
 	var password = login.password;
 
@@ -63,6 +66,8 @@ app.post('/api/guardian/login', (req, res) => {
 		}
 		if(count<1)
 		{
+			console.log(email);
+			console.log(password);
 			res.json({"success":"failure","message":"Sorry the login credentials might be wrong. Please try again."});
 		}
 		else
