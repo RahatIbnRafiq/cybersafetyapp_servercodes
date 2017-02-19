@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const guardianSchema = mongoose.Schema({
 	email:{
 		type: String,
+		unique: true,
 		required: true
 	},
 	password:{
@@ -15,6 +16,12 @@ const guardianSchema = mongoose.Schema({
 		required: true
 	},
 	instagram_access_token:{
+		type: String
+	},
+	facebook_access_token:{
+		type: String
+	},
+	twitter_access_token:{
 		type: String
 	}
 });
