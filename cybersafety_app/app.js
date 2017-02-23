@@ -87,6 +87,7 @@ app.get('/api/guardian/login', (req, res) => {
 app.get('/api/guardian/instagramAuthToken', (req, res) => {
 	var req = req.query;
 	var code = req.code;
+	var email = req.email;
 	var request = require('request');
 
 	request.post(
@@ -147,6 +148,29 @@ app.post('/api/guardian/instagram/useraddRequest', (req, res) => {
 	       		});
 			}
 			res.json({"success":"success","message":"Your monitoring request was successful."});
+		}
+		
+	});
+
+	
+});
+
+
+// Guardian get monitoring users
+
+
+app.get('/api/guardian/instagram/getMonitoringUsers', (req, res) => {
+	var queryBody = req.query;
+	var email = queryBody.email;
+
+	InstagramMonitoringUsers.getMonitoringUsers(email, (err, users) => {
+		if(err){
+			res.json({"success":"failure","message":"something bad must have happened. Please try again."});
+			throw err;
+		}
+		else
+		{
+			res.json({"success":"success","message":"The request was successful","users":users});
 		}
 		
 	});

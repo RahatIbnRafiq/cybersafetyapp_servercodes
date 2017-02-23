@@ -45,3 +45,12 @@ module.exports.checkIfGuardianExists = (email, callback) => {
 module.exports.loginGuardian = (email,password, callback) => {
 	Guardian.count({ email: email,password:password}).count(callback);
 }
+
+
+// Guardian insert Instagram token
+
+module.exports.insertInstagramToken = (email,token, callback) => {
+
+	var conditions = { email: email }, update = { instagram_access_token: token}, options = { multi: true };
+	Guardian.update(conditions, update, options, callback);
+}

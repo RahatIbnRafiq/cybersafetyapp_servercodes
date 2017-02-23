@@ -32,3 +32,10 @@ module.exports.numberOfCurrentlyMonotoring = (email, callback) => {
 	InstagramMonitoringUsers.count({ email: email }).count(callback);
 }
 
+
+// get the instagram users an email is monitoring
+
+module.exports.getMonitoringUsers = (email, callback) => {
+	InstagramMonitoringUsers.find({ email: email }, callback);
+}
+
