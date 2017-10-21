@@ -39,3 +39,10 @@ module.exports.getMonitoringUsers = (email, callback) => {
 	InstagramMonitoringUsers.find({ email: email }, callback);
 }
 
+
+//check if the user is monitoring already
+
+module.exports.isAlreadyMonitoring = (email,username,callback) => {
+	InstagramMonitoringUsers.count({ email: email,username:username}).count(callback);
+}
+
