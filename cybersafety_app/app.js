@@ -115,42 +115,89 @@ app.get('/api/guardian/instagramAuthToken', (req, res) => {
 
 //Add user to InstagramMonitoringUser table
 
-app.post('/api/guardian/instagram/useraddRequest', (req, res) => {
+app.post('/api/guardian/instagram/useraddRequest', (req, res) => 
+{
 	var useraddRequest = req.body;
 	var email = useraddRequest.email;
 	var countRequest = useraddRequest.countRequest;	
 	var data = useraddRequest.data;
-	InstagramMonitoringUsers.numberOfCurrentlyMonotoring(email, (err, count) => {
-		if(err){
-			res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
-			throw err;
-		}
-		if(count == NO_OF_USERS_CAN_MONITOR)
+	var error = 0;
+	var alreadyMonitoring = [];
+
+	function check(i)
+	{
+		if(i<data.length)
 		{
-			res.json({"success":"failure","message":"The number of monitored users for Instagram has reached its limit."});
-		}
-		else if (count+countRequest > NO_OF_USERS_CAN_MONITOR)
-		{
-			res.json({"success":"failure","message":"You are already monitoring "+(count)+" users. You can only monitor "+(NO_OF_USERS_CAN_MONITOR-count)+" users now."});
+			var username = data[i].username;
+			InstagramMonitoringUsers.isAlreadyMonitoring(email, username, (err, count) => 
+			{
+				if(err)
+				{
+					if (error == 0)
+						error = 1;
+				}
+				if(count>0)
+				{
+					if (error == 0)
+					{
+						error = 2;
+						alreadyMonitoring.push(username);
+					}
+				}
+				check(i+1);
+			});
+			
 		}
 		else
 		{
-			for(var i=0;i<data.length;i++)
+			if(error == 1)
 			{
-				var temp = data[i];
-				InstagramMonitoringUsers.addInstagramMonitoringUser(temp, (error, temp) => 
-				{
-			    	if(error)
-			    	{
-						res.json({"success":"failure","message":"something bad must have happened. Please try again."});
-					}
-					
-	       		});
+				res.json({"success":"failure","message":"something bad happened, please try again"});
 			}
-			res.json({"success":"success","message":"Your monitoring request was successful."});
+			else if (error == 2)
+			{
+				res.json({"success":"failure","message":"already monitoring one of the users:"+alreadyMonitoring});
+			}
+			else
+			{
+				insertAfterCheck(0);
+			}
+
 		}
-		
-	});
+	}
+
+
+	function insertAfterCheck(i)
+	{
+		if(i<data.length)
+		{
+			var temp = data[i];
+			InstagramMonitoringUsers.addInstagramMonitoringUser(temp, (errr, temp) => 
+			{
+				if(errr)
+				{
+					if (error == 0)
+						error = 1
+				}
+				insertAfterCheck(i+1);
+			});
+		}
+		else
+		{
+			if(error == 1)
+			{
+				res.json({"success":"failure","message":"something bad happened, please try again"});
+			}
+			else
+			{
+				res.json({"success":"failure","message":"monitoring request was successful"});
+			}
+		}
+	}
+
+	check(0);
+
+
 
 	
 });
@@ -203,7 +250,12 @@ app.get('/api/guardian/instagram/getMonitoringCount', (req, res) => {
 
 
 
+//default homepage for the api
 
+app.get('/', function(req,res)
+{
+	res.send("hello world to the cybersafety app api.");
+});
 
 
 
