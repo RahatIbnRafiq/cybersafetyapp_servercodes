@@ -15,8 +15,27 @@ var NO_OF_USERS_CAN_MONITOR = 2;
 
 Guardian =require('./models/guardian');
 InstagramMonitoringUsers =require('./models/instagram_monitoring_users');
+AppNotification = require('./models/app_notifications')
 
 
+
+//add notification
+
+app.post('/api/notification/add', (req, res) => {
+	var appNotification = req.body;
+	AppNotification.addNotification(appNotification, (err, appNotification) => 
+	{
+			if(err)
+			{
+				res.json({"success":"failure","message":"could not add the notification."});
+			}
+			else
+			{
+				res.json({"success":"success","message":"Adding notification was successful"});
+			}
+	});
+			
+});
 
 
 
@@ -190,7 +209,7 @@ app.post('/api/guardian/instagram/useraddRequest', (req, res) =>
 			}
 			else
 			{
-				res.json({"success":"failure","message":"monitoring request was successful"});
+				res.json({"success":"success","message":"monitoring request was successful"});
 			}
 		}
 	}
