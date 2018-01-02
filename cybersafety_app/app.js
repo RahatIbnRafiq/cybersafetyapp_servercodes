@@ -1,7 +1,13 @@
+
+
+
+
 var express = require("express");
 var app = express();
 var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
+var bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 app.use(bodyParser.json());
 
@@ -15,7 +21,50 @@ var NO_OF_USERS_CAN_MONITOR = 2;
 
 Guardian =require('./models/guardian');
 InstagramMonitoringUsers =require('./models/instagram_monitoring_users');
-AppNotification = require('./models/app_notifications')
+AppNotification = require('./models/app_notifications');
+AppNotificationFeedback = require('./models/app_notification_feedback');
+AppClassifier = require('./models/app_classifier');
+
+
+
+
+
+//add classifier
+
+app.post('/api/classifier/add', (req, res) => {
+	var appClassifier = req.body;
+	AppClassifier.addClassifier(appClassifier, (err, appClassifier) => 
+	{
+			if(err)
+			{
+				res.json({"success":"failure","message":"could not add the classifier."});
+			}
+			else
+			{
+				res.json({"success":"success","message":"Adding classifier was successful"});
+			}
+	});
+			
+});
+
+
+//add notification feedback
+
+app.post('/api/notificationfeedback/add', (req, res) => {
+	var appNotificationFeedback = req.body;
+	AppNotificationFeedback.addNotificationFeedback(appNotificationFeedback, (err, appNotificationFeedback) => 
+	{
+			if(err)
+			{
+				res.json({"success":"failure","message":"could not add the feedback."});
+			}
+			else
+			{
+				res.json({"success":"success","message":"Adding feedback was successful"});
+			}
+	});
+			
+});
 
 
 
@@ -46,6 +95,7 @@ app.post('/api/notification/add', (req, res) => {
 app.post('/api/guardian/register', (req, res) => {
 	var guardian = req.body;
 	var email = guardian.email;
+	var password = guardian.password;
 
 	
 	Guardian.checkIfGuardianExists(email, (err, count) => {
@@ -59,6 +109,8 @@ app.post('/api/guardian/register', (req, res) => {
 		}
 		else
 		{
+			var hash = bcrypt.hashSync(password, saltRounds);
+			guardian.password = hash;
 			Guardian.registerGuardian(guardian, (err, guardian) => {
 			if(err){
 				res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
@@ -81,24 +133,90 @@ app.get('/api/guardian/login', (req, res) => {
 	var password = login.password;
 
 
-	Guardian.loginGuardian(email, password, (err, count) => {
-		if(err){
+	Guardian.loginGuardian(email, (err, guardian) => {
+		if(err)
+		{
 			res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
 			//throw err;
 		}
-		if(count<1)
-		{
-			res.json({"success":"failure","message":"Sorry the login credentials might be wrong. Please try again."});
-		}
 		else
 		{
-			res.json({"success":"success","message":"Yay! The login was successful."});
+			try{
+				var hashFromDB = guardian[0].password;
+				isMatch = bcrypt.compareSync(password, hashFromDB);
+				if(isMatch == true)
+				{
+					res.json({"success":"success","message":"Yay! The login was successful."});
+				}
+				else
+				{
+					res.json({"success":"failure","message":"Sorry the login credentials might be wrong. Please try again."});
+				}
+
+			}catch(errr)
+			{
+				res.json({"success":"failure","message":"Sorry the login credentials might be wrong. Please try again."});
+			}
+			
 		}
 		
 	});
 
 	
 });
+
+
+
+
+// Get Notification Count
+
+app.get('/api/notification/count', (req, res) => {
+	var query = req.query;
+	var email = query.email;
+
+
+	AppNotification.getNotificationCount(email, (err, count) => 
+	{
+		if(err)
+		{
+			res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
+			//throw err;
+		}
+		else
+		{
+			res.json({"success":"success","message":count});
+		}
+		
+	});
+
+	
+});
+
+// Get Feedback Count
+
+app.get('/api/feedback/count', (req, res) => {
+	var query = req.query;
+	var email = query.email;
+
+
+	AppNotificationFeedback.getNotificationFeedbacksCount(email, (err, count) => 
+	{
+		if(err)
+		{
+			res.json({"success":"failure","message":"Something unexpected happened. Please try again."});
+			//throw err;
+		}
+		else
+		{
+			res.json({"success":"success","message":count});
+		}
+		
+	});
+
+	
+});
+
+
 
 
 // Guardian autehntication token
@@ -237,6 +355,115 @@ app.get('/api/guardian/instagram/getMonitoringUsers', (req, res) => {
 		else
 		{
 			res.json({"success":"success","message":"The request was successful","users":users});
+		}
+		
+	});
+
+	
+});
+
+
+
+
+// get classifier
+
+
+app.get('/api/classifier/getClassifier', (req, res) => {
+
+	AppClassifier.getClassifiers((err, classifiers) => {
+		if(err)
+		{
+			res.json({"success":"failure","message":"something bad must have happened. Please try again."});
+			//throw err;
+		}
+		else
+		{
+			var results = [];
+			var totalItem = 0.0;
+			var interceptWeight = 0.0;
+			var negativeCommentCountWeight = 0.0;
+			var negativeCommentPercentageWeight = 0.0;
+			var negativeWordPerNegativeCommentWeight = 0.0;
+			for(var item of classifiers)
+			{
+				totalItem += 1.0;
+				interceptWeight = parseFloat(interceptWeight) + parseFloat(item.interceptWeight);
+				negativeCommentCountWeight = parseFloat(negativeCommentCountWeight) + parseFloat(item.negativeCommentCountWeight);
+				negativeCommentPercentageWeight = parseFloat(negativeCommentPercentageWeight) + parseFloat(item.negativeCommentPercentageWeight);
+				negativeWordPerNegativeCommentWeight = parseFloat(negativeWordPerNegativeCommentWeight) + parseFloat(item.negativeWordPerNegativeCommentWeight);
+
+			}
+			interceptWeight = interceptWeight/totalItem;
+			negativeCommentCountWeight = negativeCommentCountWeight/totalItem;
+			negativeCommentPercentageWeight = negativeCommentPercentageWeight/totalItem;
+			negativeWordPerNegativeCommentWeight = negativeWordPerNegativeCommentWeight/totalItem;
+
+			results.push({interceptWeight:interceptWeight,
+						negativeCommentCountWeight:negativeCommentCountWeight,
+						negativeCommentPercentageWeight:negativeCommentPercentageWeight,
+						negativeWordPerNegativeCommentWeight:negativeWordPerNegativeCommentWeight});
+
+			res.json({"success":"success","message":"The request was successful","weights":results});
+		}
+		
+	});
+
+	
+});
+
+
+
+// Guardian get notifications
+
+
+app.get('/api/guardian/getNotifications', (req, res) => {
+	var queryBody = req.query;
+	var email = queryBody.email;
+
+	AppNotification.getNotifications(email, (err, notifications) => {
+		if(err){
+			res.json({"success":"failure","message":"something bad must have happened. Please try again."});
+			throw err;
+		}
+		else
+		{
+			var result = [];
+			for(var item of notifications)
+			{
+				result.push({notificationid:item.notificationid,appNotificationResult:item.appNotificationResult,
+					username:item.username,osn_name:item.osn_name});
+			}
+			res.json({"success":"success","message":"The request was successful","notifications":result});
+		}
+		
+	});
+
+	
+});
+
+
+// Guardian get feedbacks
+
+
+app.get('/api/guardian/getNotificationFeedbacks', (req, res) => {
+	var queryBody = req.query;
+	var email = queryBody.email;
+	var username = queryBody.username;
+
+	AppNotificationFeedback.getNotificationFeedbacks(email, (err, feedbacks) => {
+		if(err)
+		{
+			res.json({"success":"failure","message":"something bad must have happened. Please try again."});
+			throw err;
+		}
+		else
+		{
+			var result = [];
+			for(var item of feedbacks)
+			{
+				result.push({notificationid:item.notificationid,predicted:item.predicted,feedback:item.feedback});
+			}
+			res.json({"success":"success","message":"The request was successful","feedbacks":result});
 		}
 		
 	});

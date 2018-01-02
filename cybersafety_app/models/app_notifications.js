@@ -51,3 +51,17 @@ const AppNotification = module.exports = mongoose.model('appNotification', appNo
 module.exports.addNotification = (appNotification, callback) => {
 	AppNotification.create(appNotification, callback);
 }
+
+
+
+// get the notifications by the email
+
+module.exports.getNotifications = (email, callback) => {
+	AppNotification.find({ email: email }, callback);
+}
+
+// Notification Count
+
+module.exports.getNotificationCount = (email, callback) => {
+	AppNotification.count({ email: email}).count(callback);
+}

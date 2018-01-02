@@ -15,6 +15,18 @@ const guardianSchema = mongoose.Schema({
 		type: String,
 		required: true
 	},
+	age_group:{
+		type: String,
+		required: true
+	},
+	ethnicity:{
+		type: String,
+		required: true
+	},
+	gender:{
+		type: String,
+		required: true
+	},
 	instagram_access_token:{
 		type: String
 	},
@@ -42,8 +54,8 @@ module.exports.checkIfGuardianExists = (email, callback) => {
 
 // Guardian LogIn
 
-module.exports.loginGuardian = (email,password, callback) => {
-	Guardian.count({ email: email,password:password}).count(callback);
+module.exports.loginGuardian = (email, callback) => {
+	Guardian.find({ email: email}, callback);
 }
 
 

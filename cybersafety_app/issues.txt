@@ -1,0 +1,5 @@
+1. for password encryption, bcryptjs is used.
+command to install in the server:
+npm install -g node-gyp
+npm install --save bcryptjs && npm uninstall --save bcrypt
+use requite bcryptjs in the code
