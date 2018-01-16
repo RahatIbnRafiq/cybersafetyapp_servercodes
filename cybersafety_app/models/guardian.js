@@ -11,10 +11,6 @@ const guardianSchema = mongoose.Schema({
 		type: String,
 		required: true
 	},
-	phone_number:{
-		type: String,
-		required: true
-	},
 	age_group:{
 		type: String,
 		required: true
